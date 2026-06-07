@@ -24,6 +24,8 @@ model User {
   submissions  Submission[]
   notes        Note[]
   achievements UserAchievement[]
+  sentMessages     Message[]  @relation("SentMessages")
+  receivedMessages Message[]  @relation("ReceivedMessages")
 
   @@map("users")
 }
@@ -46,6 +48,7 @@ model Course {
   enrollments  Enrollment[]
   tags         CourseTag[]
   posters      ARPoster[]
+  messages     Message[]
 
   @@map("courses")
 }
@@ -288,4 +291,21 @@ model LabExperiment {
   updatedAt   DateTime @updatedAt
 
   @@map("lab_experiments")
+}
+
+model Message {
+  id         String   @id @default(cuid())
+  senderId   String
+  receiverId String
+  courseId   String?
+  message    String
+  read       Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  sender   User    @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver User    @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+  course   Course? @relation(fields: [courseId], references: [id], onDelete: SetNull)
+
+  @@map("messages")
 }

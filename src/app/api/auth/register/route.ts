@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 
 export async function POST(request: NextRequest) {
-  const { name, email, password } = await request.json();
+  const { name, email, password, role } = await request.json();
 
   if (!name || !email || !password) {
     return Response.json(
@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
   const passwordHash = await bcrypt.hash(password, 12);
 
   const user = await prisma.user.create({
-    data: { name, email, passwordHash, role: "STUDENT" },
+    data: { name, email, passwordHash, role: role === "INSTRUCTOR" ? "INSTRUCTOR" : "STUDENT" },
     select: { id: true, name: true, email: true, role: true },
   });
 

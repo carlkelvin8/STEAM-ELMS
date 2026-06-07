@@ -15,6 +15,7 @@ export async function GET(request: NextRequest) {
           modules: {
             include: { lessons: { select: { id: true, title: true } } },
           },
+          instructor: { select: { id: true, name: true, role: true, avatarUrl: true } },
         },
       },
     },

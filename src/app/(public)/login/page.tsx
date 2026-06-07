@@ -34,7 +34,7 @@ export default function LoginPage() {
 
     const data = await res.json();
     localStorage.setItem("user", JSON.stringify(data.user));
-    router.push("/dashboard");
+    router.push(data.user.role === "INSTRUCTOR" ? "/teacher" : "/dashboard");
   }
 
   return (
