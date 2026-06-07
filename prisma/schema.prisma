@@ -1,0 +1,291 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  name          String
+  passwordHash  String
+  role          String   @default("STUDENT")
+  avatarUrl     String?
+  bio           String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  enrollments  Enrollment[]
+  progress     Progress[]
+  authoredCourses Course[]   @relation("CourseInstructor")
+  submissions  Submission[]
+  notes        Note[]
+  achievements UserAchievement[]
+
+  @@map("users")
+}
+
+model Course {
+  id            String   @id @default(cuid())
+  title         String
+  description   String
+  thumbnailUrl  String?
+  instructorId  String
+  published     Boolean  @default(false)
+  category      String?
+  difficulty    String?
+  estimatedHours Int?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  instructor   User       @relation("CourseInstructor", fields: [instructorId], references: [id])
+  modules      Module[]
+  enrollments  Enrollment[]
+  tags         CourseTag[]
+  posters      ARPoster[]
+
+  @@map("courses")
+}
+
+model Module {
+  id        String   @id @default(cuid())
+  title     String
+  description String?
+  order     Int
+  courseId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  course    Course            @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessons   Lesson[]
+  resources ModuleResource[]
+
+  @@map("modules")
+}
+
+model ModuleResource {
+  id        String   @id @default(cuid())
+  moduleId  String
+  title     String
+  type      String   @default("PDF")
+  url       String?
+  content   String?
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  module Module @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  @@map("module_resources")
+}
+
+model Lesson {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  type        String   @default("VIDEO")
+  order       Int
+  content     String?
+  videoUrl    String?
+  duration    Int?
+  moduleId    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  module      Module         @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  vrContent   VRContent?
+  posters     ARPoster[]
+  progress    Progress[]
+  questions   Question[]
+  notes       Note[]
+
+  @@map("lessons")
+}
+
+model VRContent {
+  id           String   @id @default(cuid())
+  title        String
+  description  String?
+  format       String   @default("VR_SCENE")
+  url          String
+  thumbnailUrl String?
+  settings     String?
+  lessonId     String   @unique
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@map("vr_contents")
+}
+
+model Enrollment {
+  id        String    @id @default(cuid())
+  userId    String
+  courseId   String
+  progress  Float     @default(0)
+  completed Boolean   @default(false)
+  enrolledAt DateTime @default(now())
+  completedAt DateTime?
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+  @@map("enrollments")
+}
+
+model Progress {
+  id        String   @id @default(cuid())
+  userId    String
+  lessonId  String
+  status    String   @default("NOT_STARTED")
+  score     Float?
+  completedAt DateTime?
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, lessonId])
+  @@map("progress")
+}
+
+model Question {
+  id        String   @id @default(cuid())
+  lessonId  String
+  text      String
+  options   String?
+  answer    String?
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  lesson     Lesson       @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  submissions Submission[]
+
+  @@map("questions")
+}
+
+model Submission {
+  id         String   @id @default(cuid())
+  userId     String
+  questionId String?
+  lessonId   String?
+  answer     String?
+  score      Float?
+  feedback   String?
+  submittedAt DateTime @default(now())
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question Question? @relation(fields: [questionId], references: [id], onDelete: SetNull)
+
+  @@map("submissions")
+}
+
+model CourseTag {
+  id       String @id @default(cuid())
+  courseId  String
+  tag      String
+
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([courseId, tag])
+  @@map("course_tags")
+}
+
+model Note {
+  id        String   @id @default(cuid())
+  userId    String
+  lessonId  String
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@map("notes")
+}
+
+model Achievement {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  icon        String   @default("🏆")
+  category    String   @default("lessons")
+  metric      String
+  threshold   Int      @default(1)
+  createdAt   DateTime @default(now())
+
+  userAchievements UserAchievement[]
+
+  @@map("achievements")
+}
+
+model UserAchievement {
+  id            String    @id @default(cuid())
+  userId        String
+  achievementId String
+  progress      Int       @default(0)
+  unlocked      Boolean   @default(false)
+  unlockedAt    DateTime?
+  createdAt     DateTime  @default(now())
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievement Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, achievementId])
+  @@map("user_achievements")
+}
+
+model ARPoster {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  format      String   @default("AR_POSTER")
+  config      String?
+  imageUrl    String?
+  lessonId    String?
+  courseId    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  lesson Lesson? @relation(fields: [lessonId], references: [id], onDelete: SetNull)
+  course Course? @relation(fields: [courseId], references: [id], onDelete: SetNull)
+
+  @@map("ar_posters")
+}
+
+model CampusBuilding {
+  id           String   @id @default(cuid())
+  name         String
+  description  String?
+  abbreviation String?
+  color        String   @default("#6366f1")
+  positionX    Float    @default(0)
+  positionZ    Float    @default(0)
+  width        Float    @default(2)
+  depth        Float    @default(2)
+  height       Float    @default(2)
+  department   String?
+  icon         String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("campus_buildings")
+}
+
+model LabExperiment {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  category    String   @default("CHEMISTRY")
+  config      String?
+  icon        String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("lab_experiments")
+}
