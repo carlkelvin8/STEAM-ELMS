@@ -103,6 +103,7 @@ STEAM ELMS is a web-based Learning Management System that combines traditional e
 
 ## User Roles
 
+
 ### Student
 
 Students can browse and enroll in courses, complete lessons, take quizzes, track progress, earn achievements, use study tools, and communicate with instructors.
