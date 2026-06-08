@@ -29,7 +29,7 @@ Creates: instructor@arelms.com, student@arelms.com, 8 VR courses.
 - Prisma v7.8.0 with `@prisma/adapter-pg` + `pg`
 - `lib/prisma.ts` uses `DATABASE_URL` with `DIRECT_URL` fallback
 - `prisma.config.ts` sets `datasource.url` to `DIRECT_URL` (for CLI migration commands)
-- `engineType = "library"` in schema (Prisma v7 compat)
+- Default engine type "client" (Prisma v7) works with `@prisma/adapter-pg`
 
 ### Commands
 - `npm run dev` — local dev with hot reload
