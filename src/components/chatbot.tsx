@@ -21,16 +21,6 @@ function formatTimestamp(d: Date) {
   return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
-function formatText(text: string) {
-  let formatted = text
-    .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-    .replace(/`(.*?)`/g, "<code class='bg-zinc-700/60 px-1.5 py-0.5 rounded text-violet-300 text-xs font-mono'>$1</code>")
-    .replace(/^### (.*$)/gm, "<div class='text-sm font-semibold text-violet-300 mt-3 mb-1'>$1</div>")
-    .replace(/^## (.*$)/gm, "<div class='text-base font-bold text-white mt-4 mb-2'>$1</div>")
-    .replace(/\n/g, "<br/>");
-  return formatted;
-}
-
 function TypewriterText({ html, speed = 12 }: { html: string; speed?: number }) {
   const [displayed, setDisplayed] = useState("");
   const indexRef = useRef(0);
@@ -40,7 +30,7 @@ function TypewriterText({ html, speed = 12 }: { html: string; speed?: number }) 
     const raw = html.replace(/<br\/>/g, "\n");
     const total = raw.length;
     indexRef.current = 0;
-    setDisplayed("");
+    setTimeout(() => setDisplayed(""), 0);
 
     timerRef.current = setInterval(() => {
       indexRef.current += 3;
@@ -63,8 +53,6 @@ function TypewriterText({ html, speed = 12 }: { html: string; speed?: number }) 
 }
 
 function BotMessage({ text, timestamp }: { text: string; timestamp: Date }) {
-  const [done, setDone] = useState(false);
-
   return (
     <div className="flex items-start gap-3">
       <div className="size-8 shrink-0 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-violet-500/20 mt-0.5">
@@ -74,11 +62,7 @@ function BotMessage({ text, timestamp }: { text: string; timestamp: Date }) {
       </div>
       <div className="flex-1 min-w-0">
         <div className="bg-zinc-800/80 rounded-2xl rounded-tl-sm px-4 py-3 text-sm leading-relaxed text-zinc-200 border border-zinc-700/50">
-          {done ? (
-            <span dangerouslySetInnerHTML={{ __html: formatText(text) }} />
-          ) : (
-            <TypewriterText html={text} speed={10} />
-          )}
+          <TypewriterText html={text} speed={10} />
         </div>
         <p className="text-[10px] text-zinc-600 mt-1 px-1">{formatTimestamp(timestamp)}</p>
       </div>
@@ -126,8 +110,7 @@ export function Chatbot() {
     if (raw) {
       try {
         const u = JSON.parse(raw);
-        setUserId(u.id);
-        setUserName(u.name || "");
+        setTimeout(() => { setUserId(u.id); setUserName(u.name || ""); }, 0);
       } catch {}
     }
   }, []);

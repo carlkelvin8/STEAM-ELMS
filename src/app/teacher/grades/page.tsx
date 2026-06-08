@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import Image from "next/image";
 
 interface StudentGrade {
   id: string;
@@ -155,7 +156,7 @@ export default function TeacherGrades() {
                             <div className="flex items-center gap-3">
                               <div className="size-8 rounded-lg bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center text-white font-bold text-xs shadow-md shrink-0">
                                 {student.avatarUrl ? (
-                                  <img src={student.avatarUrl} alt="" className="size-full object-cover rounded-lg" />
+                                  <Image src={student.avatarUrl} alt="" width={32} height={32} className="size-full object-cover rounded-lg" unoptimized />
                                 ) : (
                                   student.name.charAt(0).toUpperCase()
                                 )}

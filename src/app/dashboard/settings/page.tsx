@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 interface User {
   id: string;
@@ -182,7 +183,7 @@ export default function SettingsPage() {
             <div className="flex items-center gap-5">
               <div className="relative size-20 rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center text-white font-bold text-2xl shadow-lg shadow-violet-500/20 overflow-hidden shrink-0 group">
                 {previewSrc ? (
-                  <img src={previewSrc} alt="Avatar" className="size-full object-cover" />
+                  <Image src={previewSrc} alt="Avatar" width={80} height={80} className="size-full object-cover" unoptimized />
                 ) : (
                   initial
                 )}
@@ -226,20 +227,21 @@ export default function SettingsPage() {
 
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">Full Name</label>
-              <input
-                id="name" type="text" value={name} onChange={(e) => setName(e.target.value)} required
-                className="w-full px-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500 transition-colors"
-              />
+                <input
+                  id="name" type="text" value={name} onChange={(e) => setName(e.target.value)} required minLength={2} maxLength={100}
+                  className="w-full px-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500 transition-colors"
+                />
             </div>
 
             <div>
               <label htmlFor="bio" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">Bio</label>
-              <textarea
-                id="bio" rows={4} value={bio} onChange={(e) => setBio(e.target.value)}
-                placeholder="Tell us about yourself..."
-                className="w-full px-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500 transition-colors resize-none placeholder:text-zinc-400"
-              />
-              <p className="text-xs text-zinc-400 mt-1">{bio.length}/500 characters</p>
+                <textarea
+                  id="bio" rows={4} value={bio} onChange={(e) => setBio(e.target.value)}
+                  placeholder="Tell us about yourself..."
+                  maxLength={500}
+                  className="w-full px-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500 transition-colors resize-none placeholder:text-zinc-400"
+                />
+                <p className="text-xs text-zinc-400 mt-1">{bio.length}/500 characters</p>
             </div>
           </div>
 
@@ -249,10 +251,13 @@ export default function SettingsPage() {
             <div className="flex items-center gap-5">
               <div className="bg-white dark:bg-zinc-800 p-2 rounded-2xl shadow-sm shrink-0">
                 {typeof window !== "undefined" && (
-                  <img
+                  <Image
                     src={`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(`${window.location.origin}/dashboard/id`)}`}
                     alt="ID QR Code"
+                    width={80}
+                    height={80}
                     className="size-20"
+                    unoptimized
                   />
                 )}
               </div>
@@ -307,7 +312,7 @@ export default function SettingsPage() {
                 <label htmlFor="new-password" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">New Password</label>
                 <input
                   id="new-password" type="password" value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)} required minLength={6}
+                  onChange={(e) => setNewPassword(e.target.value)} required minLength={6} maxLength={128}
                   className="w-full px-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500 transition-colors"
                 />
                 <p className="text-xs text-zinc-400 mt-1">At least 6 characters</p>
@@ -356,16 +361,19 @@ export default function SettingsPage() {
             <div className="flex items-center gap-6">
               <div className="bg-white dark:bg-zinc-800 p-2 rounded-2xl shadow-sm shrink-0">
                 {typeof window !== "undefined" && (
-                  <img
+                  <Image
                     src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(`${window.location.origin}/dashboard/id`)}`}
                     alt="ID QR Code"
+                    width={96}
+                    height={96}
                     className="size-24"
+                    unoptimized
                   />
                 )}
               </div>
               <div className="min-w-0">
                 <div className="size-14 rounded-xl bg-gradient-to-br from-violet-500 via-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg shadow-md shrink-0 overflow-hidden ring-2 ring-white/50 dark:ring-zinc-800/50 mb-2">
-                  {user?.avatarUrl ? <img src={user.avatarUrl} alt="" className="size-full object-cover" /> : user?.name?.charAt(0)?.toUpperCase() ?? "S"}
+                  {user?.avatarUrl ? <Image src={user.avatarUrl} alt="" width={56} height={56} className="size-full object-cover" unoptimized /> : user?.name?.charAt(0)?.toUpperCase() ?? "S"}
                 </div>
                 <p className="text-sm font-semibold truncate">{user?.name}</p>
                 <span className={`inline-block text-[10px] font-medium px-1.5 py-0.5 rounded-full mt-0.5 ${user?.role === "INSTRUCTOR" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300" : "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300"}`}>

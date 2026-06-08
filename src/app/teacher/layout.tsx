@@ -24,7 +24,7 @@ export default function TeacherLayout({
       router.replace("/dashboard");
       return;
     }
-    setAuthorized(true);
+    setTimeout(() => setAuthorized(true), 0);
   }, [router]);
 
   if (!authorized) {

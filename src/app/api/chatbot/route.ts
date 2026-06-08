@@ -42,15 +42,20 @@ function getMotivationalTip(percentage: number | null): string {
 }
 
 export async function POST(request: NextRequest) {
-  const { message, userId } = await request.json();
-
-  if (!message || !userId) {
-    return Response.json({ error: "message and userId are required" }, { status: 400 });
-  }
-
-  const intent = matchIntent(message);
-
   try {
+    const { message, userId } = await request.json();
+
+    if (typeof message !== "string" || !message.trim()) {
+      return Response.json({ error: "message is required" }, { status: 400 });
+    }
+    if (typeof userId !== "string" || !userId.trim()) {
+      return Response.json({ error: "userId is required" }, { status: 400 });
+    }
+
+    const sanitizedMessage = message.trim().slice(0, 2000);
+
+  const intent = matchIntent(sanitizedMessage);
+
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: { id: true, name: true, role: true },
@@ -230,7 +235,7 @@ export async function POST(request: NextRequest) {
 
         // Calculate GPA
         const gpa = enrollments.length > 0
-          ? (enrollments.reduce((sum, e) => {
+          ? (enrollments.reduce((sum) => {
               const avg = overallAvg ?? 0;
               if (avg >= 90) return sum + 4.0;
               if (avg >= 80) return sum + 3.0;
@@ -457,6 +462,9 @@ export async function POST(request: NextRequest) {
     }
   } catch (error) {
     console.error("Chatbot error:", error);
+    if (error instanceof SyntaxError) {
+      return Response.json({ error: "Invalid request body" }, { status: 400 });
+    }
     return Response.json({
       response: "I apologize, but I encountered a technical issue. Please try again in a moment. If the problem persists, contact support. 🛠️",
     });

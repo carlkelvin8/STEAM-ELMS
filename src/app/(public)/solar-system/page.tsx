@@ -19,7 +19,7 @@ export default function SolarSystemPage() {
       router.push("/login");
       return;
     }
-    setAuthorized(true);
+    setTimeout(() => setAuthorized(true), 0);
   }, [router]);
 
   if (!authorized) {

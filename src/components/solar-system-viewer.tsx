@@ -351,7 +351,6 @@ export function SolarSystemViewer() {
     controls.target.set(0, 0, 0);
 
     // ── Galaxy background ──
-    const galaxyGroup = new THREE.Group();
 
     // Spiral arms
     const armCount = 3;

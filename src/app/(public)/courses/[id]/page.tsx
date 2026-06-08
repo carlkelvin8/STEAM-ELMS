@@ -210,7 +210,9 @@ export default async function CourseDetailPage(
                               onClick={() => {
                                 const w = window.open("", "_blank");
                                 if (w) {
-                                  w.document.write(`<!DOCTYPE html><html><head><title>${r.title}</title><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{font-family:system-ui,sans-serif;max-width:720px;margin:0 auto;padding:2rem;line-height:1.7;color:#1a1a2e}h1{font-size:1.5rem;font-weight:700;margin-bottom:.5rem}.meta{font-size:.85rem;color:#888;margin-bottom:2rem}hr{border:none;border-top:1px solid #e5e7eb;margin:2rem 0}p{margin-bottom:1rem}</style></head><body><h1>${r.title}</h1><p class="meta">Article</p><hr>${r.content}</body></html>`);
+                                  const title = String(r.title).replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+                                  const content = String(r.content).replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                                  w.document.write(`<!DOCTYPE html><html><head><title>${title}</title><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{font-family:system-ui,sans-serif;max-width:720px;margin:0 auto;padding:2rem;line-height:1.7;color:#1a1a2e}h1{font-size:1.5rem;font-weight:700;margin-bottom:.5rem}.meta{font-size:.85rem;color:#888;margin-bottom:2rem}hr{border:none;border-top:1px solid #e5e7eb;margin:2rem 0}p{margin-bottom:1rem}</style></head><body><h1>${title}</h1><p class="meta">Article</p><hr><pre style="white-space:pre-wrap;font-family:inherit;margin:0">${content}</pre></body></html>`);
                                   w.document.close();
                                 }
                               }}

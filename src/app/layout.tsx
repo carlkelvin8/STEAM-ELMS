@@ -13,9 +13,41 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "STEAM ELMS - VR Learning Management System",
+  title: {
+    default: "STEAM ELMS - VR Learning Management System",
+    template: "%s | STEAM ELMS",
+  },
   description:
-    "Immersive VR-powered learning management system for STEAM education",
+    "Immersive VR-powered learning management system for STEAM education. Explore interactive courses, track progress, and learn in a virtual campus.",
+  keywords: [
+    "VR learning",
+    "STEAM education",
+    "virtual reality",
+    "learning management system",
+    "online courses",
+    "AR ELMS",
+  ],
+  authors: [{ name: "AR ELMS Team" }],
+  creator: "AR ELMS",
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: "https://arelms.vercel.app",
+    siteName: "STEAM ELMS",
+    title: "STEAM ELMS - VR Learning Management System",
+    description:
+      "Immersive VR-powered learning management system for STEAM education",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "STEAM ELMS - VR Learning Management System",
+    description:
+      "Immersive VR-powered learning management system for STEAM education",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({
@@ -28,7 +60,10 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body suppressHydrationWarning className="min-h-full flex flex-col bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
+      <body
+        suppressHydrationWarning
+        className="min-h-full flex flex-col bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100"
+      >
         {children}
       </body>
     </html>

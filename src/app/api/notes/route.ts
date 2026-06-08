@@ -60,31 +60,47 @@ export async function DELETE(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const body = await request.json();
-  const { userId, lessonId, content: rawContent } = body;
+  try {
+    const body = await request.json();
+    const { userId, lessonId, content: rawContent } = body;
 
-  if (!userId || !lessonId || !rawContent?.trim()) {
-    return Response.json({ error: "userId, lessonId, and content are required" }, { status: 400 });
-  }
+    if (typeof userId !== "string" || !userId.trim()) {
+      return Response.json({ error: "userId is required" }, { status: 400 });
+    }
+    if (typeof lessonId !== "string" || !lessonId.trim()) {
+      return Response.json({ error: "lessonId is required" }, { status: 400 });
+    }
+    if (typeof rawContent !== "string" || !rawContent.trim()) {
+      return Response.json({ error: "content is required" }, { status: 400 });
+    }
 
-  const existing = await prisma.note.findFirst({
-    where: { userId, lessonId },
-    orderBy: { updatedAt: "desc" },
-  });
+    const content = rawContent.trim().slice(0, 10000);
 
-  if (existing) {
-    const updated = await prisma.note.update({
-      where: { id: existing.id },
-      data: { content: rawContent.trim() },
+    const existing = await prisma.note.findFirst({
+      where: { userId, lessonId },
+      orderBy: { updatedAt: "desc" },
     });
+
+    if (existing) {
+      const updated = await prisma.note.update({
+        where: { id: existing.id },
+        data: { content },
+      });
+      checkNotesAchievement(userId);
+      return Response.json(updated);
+    }
+
+    const note = await prisma.note.create({
+      data: { userId, lessonId, content },
+    });
+
     checkNotesAchievement(userId);
-    return Response.json(updated);
+    return Response.json(note, { status: 201 });
+  } catch (err) {
+    console.error("Notes error:", err);
+    if (err instanceof SyntaxError) {
+      return Response.json({ error: "Invalid request body" }, { status: 400 });
+    }
+    return Response.json({ error: "Internal server error" }, { status: 500 });
   }
-
-  const note = await prisma.note.create({
-    data: { userId, lessonId, content: rawContent.trim() },
-  });
-
-  checkNotesAchievement(userId);
-  return Response.json(note, { status: 201 });
 }

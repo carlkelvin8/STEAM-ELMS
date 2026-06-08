@@ -21,15 +21,21 @@ export default function LeaderboardPage() {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortKey, setSortKey] = useState<SortKey>("completedLessons");
-  const [user, setUser] = useState<{ id: string } | null>(null);
+  const [user] = useState<{ id: string } | null>(() => {
+    if (typeof window !== "undefined") {
+      const raw = localStorage.getItem("user");
+      if (raw) {
+        try { return JSON.parse(raw); } catch {}
+      }
+    }
+    return null;
+  });
 
   useEffect(() => {
-    const raw = localStorage.getItem("user");
-    if (!raw) {
+    if (!user) {
       router.push("/login");
       return;
     }
-    setUser(JSON.parse(raw));
 
     fetch("/api/leaderboard")
       .then((r) => r.json())
@@ -38,7 +44,7 @@ export default function LeaderboardPage() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, [router]);
+  }, [router, user]);
 
   const sorted = [...entries].sort((a, b) => {
     const val = b[sortKey] - a[sortKey];

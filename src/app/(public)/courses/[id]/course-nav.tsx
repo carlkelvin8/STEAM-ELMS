@@ -19,7 +19,7 @@ export function CourseNav({ modules }: { modules: ModuleNavItem[] }) {
       const el = document.getElementById(hash);
       if (el) {
         el.scrollIntoView({ behavior: "smooth" });
-        setActiveId(hash);
+        setTimeout(() => setActiveId(hash), 0);
       }
     }
     initialized.current = true;

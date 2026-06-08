@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import Image from "next/image";
 
 interface StudentData {
   id: string;
@@ -94,7 +95,7 @@ export default function TeacherStudents() {
               <div className="flex items-center gap-4">
                 <div className="size-11 rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-emerald-500/20 shrink-0">
                   {student.avatarUrl ? (
-                    <img src={student.avatarUrl} alt="" className="size-full object-cover rounded-xl" />
+                    <Image src={student.avatarUrl} alt="" width={44} height={44} className="size-full object-cover rounded-xl" unoptimized />
                   ) : (
                     student.name.charAt(0).toUpperCase()
                   )}

@@ -26,30 +26,57 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const body = await request.json();
+  try {
+    const body = await request.json();
 
-  const existing = await prisma.enrollment.findUnique({
-    where: {
-      userId_courseId: {
+    if (typeof body.userId !== "string" || !body.userId.trim()) {
+      return Response.json({ error: "userId is required" }, { status: 400 });
+    }
+    if (typeof body.courseId !== "string" || !body.courseId.trim()) {
+      return Response.json({ error: "courseId is required" }, { status: 400 });
+    }
+
+    // Verify user exists
+    const user = await prisma.user.findUnique({ where: { id: body.userId }, select: { id: true } });
+    if (!user) {
+      return Response.json({ error: "User not found" }, { status: 404 });
+    }
+
+    // Verify course exists
+    const course = await prisma.course.findUnique({ where: { id: body.courseId }, select: { id: true } });
+    if (!course) {
+      return Response.json({ error: "Course not found" }, { status: 404 });
+    }
+
+    const existing = await prisma.enrollment.findUnique({
+      where: {
+        userId_courseId: {
+          userId: body.userId,
+          courseId: body.courseId,
+        },
+      },
+    });
+
+    if (existing) {
+      return Response.json(
+        { error: "Already enrolled in this course" },
+        { status: 409 }
+      );
+    }
+
+    const enrollment = await prisma.enrollment.create({
+      data: {
         userId: body.userId,
         courseId: body.courseId,
       },
-    },
-  });
+    });
 
-  if (existing) {
-    return Response.json(
-      { error: "Already enrolled in this course" },
-      { status: 409 }
-    );
+    return Response.json(enrollment, { status: 201 });
+  } catch (err) {
+    console.error("Enrollment error:", err);
+    if (err instanceof SyntaxError) {
+      return Response.json({ error: "Invalid request body" }, { status: 400 });
+    }
+    return Response.json({ error: "Internal server error" }, { status: 500 });
   }
-
-  const enrollment = await prisma.enrollment.create({
-    data: {
-      userId: body.userId,
-      courseId: body.courseId,
-    },
-  });
-
-  return Response.json(enrollment, { status: 201 });
 }

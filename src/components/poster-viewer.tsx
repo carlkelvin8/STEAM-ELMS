@@ -174,7 +174,7 @@ export function PosterViewer({ config, className }: PosterConfigWrapper) {
     ctx.shadowColor = "rgba(0,0,0,0.3)";
     ctx.shadowBlur = 8;
 
-    const titleLines = wrapText(ctx, config.title, 880, 52);
+    const titleLines = wrapText(ctx, config.title, 880);
     let ty = canvas.height / 2 - (titleLines.length - 1) * 32;
     for (const line of titleLines) {
       ctx.fillText(line, canvas.width / 2, ty);
@@ -185,7 +185,7 @@ export function PosterViewer({ config, className }: PosterConfigWrapper) {
       ctx.shadowBlur = 0;
       ctx.font = "20px Inter, system-ui, sans-serif";
       ctx.fillStyle = "rgba(255,255,255,0.7)";
-      const descLines = wrapText(ctx, config.description, 800, 20);
+      const descLines = wrapText(ctx, config.description, 800);
       let dy = canvas.height / 2 + 60;
       for (const line of descLines) {
         ctx.fillText(line, canvas.width / 2, dy);
@@ -352,7 +352,7 @@ export function PosterViewer({ config, className }: PosterConfigWrapper) {
   );
 }
 
-function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number, fontSize: number): string[] {
+function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
   const words = text.split(" ");
   const lines: string[] = [];
   let current = "";

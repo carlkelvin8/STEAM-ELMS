@@ -1,17 +1,25 @@
 import { NextRequest } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { createToken, setSessionCookie } from "@/lib/auth";
+import { validateEmail, validatePassword, normalizeEmail } from "@/lib/validation";
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, password } = await request.json();
+    const body = await request.json();
+    const { email: rawEmail, password } = body;
 
-    if (!email || !password) {
-      return Response.json(
-        { error: "Email and password are required" },
-        { status: 400 }
-      );
+    const emailErr = validateEmail(rawEmail);
+    if (emailErr) {
+      return Response.json({ error: emailErr }, { status: 400 });
     }
+
+    const passErr = validatePassword(password);
+    if (passErr) {
+      return Response.json({ error: passErr }, { status: 400 });
+    }
+
+    const email = normalizeEmail(rawEmail);
 
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) {
@@ -23,14 +31,25 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: "Invalid credentials" }, { status: 401 });
     }
 
-    return Response.json({
-      user: { id: user.id, name: user.name, email: user.email, role: user.role },
+    const token = await createToken({
+      sub: user.id,
+      role: user.role,
+      name: user.name,
+      email: user.email,
     });
+
+    const response = Response.json({
+      user: { id: user.id, name: user.name, email: user.email, role: user.role, token },
+    });
+
+    response.headers.set("Set-Cookie", setSessionCookie(token));
+
+    return response;
   } catch (err) {
     console.error("Login error:", err);
-    return Response.json(
-      { error: err instanceof Error ? err.message : "Internal server error" },
-      { status: 500 }
-    );
+    if (err instanceof SyntaxError) {
+      return Response.json({ error: "Invalid request body" }, { status: 400 });
+    }
+    return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

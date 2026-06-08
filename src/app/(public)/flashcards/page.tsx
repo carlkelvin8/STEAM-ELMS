@@ -24,6 +24,7 @@ export default function FlashcardsPage() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [shuffled, setShuffled] = useState(false);
+  const [seed, setSeed] = useState(() => Math.random());
 
   useEffect(() => {
     const raw = localStorage.getItem("user");
@@ -47,13 +48,15 @@ export default function FlashcardsPage() {
     if (!currentGroup) return [];
     const qs = [...currentGroup.questions];
     if (shuffled) {
+      let s = seed;
       for (let i = qs.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
+        s = (s * 16807) % 2147483647;
+        const j = Math.floor((s / 2147483647) * (i + 1));
         [qs[i], qs[j]] = [qs[j], qs[i]];
       }
     }
     return qs;
-  }, [currentGroup, shuffled]);
+  }, [currentGroup, shuffled, seed]);
 
   const currentQuestion = questions[currentIndex];
 
@@ -81,6 +84,7 @@ export default function FlashcardsPage() {
     setShuffled((s) => !s);
     setCurrentIndex(0);
     setFlipped(false);
+    setSeed(Math.random());
   };
 
   useEffect(() => {

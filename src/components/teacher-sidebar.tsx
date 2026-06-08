@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { Logo } from "@/components/logo";
 
 interface User {
@@ -36,22 +37,18 @@ const sections = [
 
 export function TeacherSidebar() {
   const pathname = usePathname();
-  const [user, setUser] = useState<User | null>(null);
-  const [open, setOpen] = useState(false);
-
-  useEffect(() => {
-    const raw = localStorage.getItem("user");
-    if (raw) {
-      try {
-        const parsed = JSON.parse(raw);
-        setUser(parsed);
-      } catch {
-        setUser(null);
+  const [user] = useState<User | null>(() => {
+    if (typeof window !== "undefined") {
+      const raw = localStorage.getItem("user");
+      if (raw) {
+        try { return JSON.parse(raw); } catch {}
       }
     }
-  }, []);
+    return null;
+  });
+  const [open, setOpen] = useState(false);
 
-  useEffect(() => { setOpen(false); }, [pathname]);
+  useEffect(() => { setTimeout(() => setOpen(false), 0); }, [pathname]);
 
   const isActive = (href: string) => {
     if (href === "/teacher") return pathname === "/teacher";
@@ -128,7 +125,7 @@ export function TeacherSidebar() {
             <div className="space-y-2">
               <div className="flex items-center gap-3">
                 <div className="size-10 rounded-xl bg-gradient-to-br from-emerald-500 via-green-500 to-teal-600 flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-emerald-500/20 shrink-0 overflow-hidden ring-2 ring-white/50 dark:ring-zinc-800/50">
-                  {user.avatarUrl ? <img src={user.avatarUrl} alt="" className="size-full object-cover" /> : initial}
+                  {user.avatarUrl ? <Image src={user.avatarUrl} alt="" width={40} height={40} className="size-full object-cover" unoptimized /> : initial}
                 </div>
                 <div className="text-sm min-w-0 flex-1">
                   <p className="font-semibold truncate text-zinc-800 dark:text-zinc-200">{user.name}</p>

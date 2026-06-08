@@ -24,14 +24,8 @@ export default function TeacherDashboard() {
   const router = useRouter();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [greeting, setGreeting] = useState("Welcome");
-
-  useEffect(() => {
-    const h = new Date().getHours();
-    if (h < 12) setGreeting("Good morning");
-    else if (h < 18) setGreeting("Good afternoon");
-    else setGreeting("Good evening");
-  }, []);
+  const hh = new Date().getHours();
+  const greeting = hh < 12 ? "Good morning" : hh < 18 ? "Good afternoon" : "Good evening";
 
   useEffect(() => {
     const raw = localStorage.getItem("user");

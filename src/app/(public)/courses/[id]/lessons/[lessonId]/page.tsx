@@ -59,7 +59,15 @@ export default function LessonPage({
 }) {
   const { id: courseId, lessonId } = use(params);
   const router = useRouter();
-  const [user, setUser] = useState<UserInfo | null>(null);
+  const [user] = useState<UserInfo | null>(() => {
+    if (typeof window !== "undefined") {
+      const raw = localStorage.getItem("user");
+      if (raw) {
+        try { return JSON.parse(raw); } catch {}
+      }
+    }
+    return null;
+  });
   const [lesson, setLesson] = useState<LessonData | null>(null);
   const [questions, setQuestions] = useState<QuestionData[]>([]);
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -79,13 +87,11 @@ export default function LessonPage({
   const [posterId, setPosterId] = useState<string | null>(null);
 
   useEffect(() => {
-    const raw = localStorage.getItem("user");
-    if (!raw) {
+    if (!user) {
       router.push("/login");
       return;
     }
-    setUser(JSON.parse(raw));
-  }, [router]);
+  }, [router, user]);
 
   useEffect(() => {
     if (!user) return;
@@ -324,6 +330,7 @@ export default function LessonPage({
             onChange={(e) => { setNote(e.target.value); setNoteSaved(false); }}
             placeholder="Write your notes for this lesson here..."
             rows={5}
+            maxLength={10000}
             className="w-full resize-none rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 placeholder:text-zinc-400"
           />
         </div>

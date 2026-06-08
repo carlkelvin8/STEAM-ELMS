@@ -5,27 +5,32 @@ import { useRouter } from "next/navigation";
 
 export function EnrollButton({ courseId }: { courseId: string }) {
   const router = useRouter();
-  const [user, setUser] = useState<{ id: string } | null>(null);
+  const [user] = useState<{ id: string } | null>(() => {
+    if (typeof window !== "undefined") {
+      const raw = localStorage.getItem("user");
+      if (raw) {
+        try { return JSON.parse(raw); } catch {}
+      }
+    }
+    return null;
+  });
   const [enrolled, setEnrolled] = useState(false);
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    const raw = localStorage.getItem("user");
-    if (!raw) {
-      setChecking(false);
+    if (!user) {
+      setTimeout(() => setChecking(false), 0);
       return;
     }
-    const u = JSON.parse(raw);
-    setUser(u);
 
-    fetch(`/api/enrollments?userId=${u.id}`)
+    fetch(`/api/enrollments?userId=${user.id}`)
       .then((r) => r.json())
       .then((data) => {
         setEnrolled(data.some((e: { courseId: string }) => e.courseId === courseId));
       })
       .finally(() => setChecking(false));
-  }, [courseId]);
+  }, [courseId, user]);
 
   const handleEnroll = async () => {
     if (!user) {

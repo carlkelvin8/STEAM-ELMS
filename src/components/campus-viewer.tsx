@@ -449,7 +449,7 @@ function createBuildingSign(scene: THREE.Scene, bx: number, bz: number, bh: numb
   scene.add(g);
 }
 
-function findPath(fromX: number, fromZ: number, toX: number, toZ: number, _buildings: BuildingData[]): { x: number; z: number }[] {
+function findPath(fromX: number, fromZ: number, toX: number, toZ: number): { x: number; z: number }[] {
   return [{ x: fromX, z: fromZ }, { x: (fromX + toX) / 2 + (toZ - fromZ) * 0.15, z: (fromZ + toZ) / 2 + (toX - fromX) * -0.15 }, { x: toX, z: toZ }];
 }
 
@@ -471,14 +471,25 @@ function Minimap({ buildings, selected, sceneRef }: {
   const zs = buildings.map((b) => b.positionZ);
   const minX = Math.min(...xs), maxX = Math.max(...xs), minZ = Math.min(...zs), maxZ = Math.max(...zs);
   const rangeX = maxX - minX || 1, rangeZ = maxZ - minZ || 1, pad = 4;
-  const toScreen = (x: number, z: number) => {
+  const toScreen = useCallback((x: number, z: number) => {
     const scale = Math.min(32 / (rangeX + pad * 2), 32 / (rangeZ + pad * 2));
     return { sx: ((x - minX + pad) / (rangeX + pad * 2)) * 36 * scale + (36 - 36 * scale) / 2, sy: ((z - minZ + pad) / (rangeZ + pad * 2)) * 36 * scale + (36 - 36 * scale) / 2 };
-  };
-  const cam = sceneRef.current?.camera;
-  const target = sceneRef.current?.controls.target;
-  const camPos = cam ? toScreen(cam.position.x, cam.position.z) : null;
-  const targetPos = target ? toScreen(target.x, target.z) : null;
+  }, [minX, minZ, rangeX, rangeZ, pad]);
+  const [camPos, setCamPos] = useState<{ sx: number; sy: number } | null>(null);
+  const [targetPos, setTargetPos] = useState<{ sx: number; sy: number } | null>(null);
+  useEffect(() => {
+    let frameId: number;
+    const update = () => {
+      const ref = sceneRef.current;
+      if (ref?.camera && ref?.controls?.target) {
+        setCamPos(toScreen(ref.camera.position.x, ref.camera.position.z));
+        setTargetPos(toScreen(ref.controls.target.x, ref.controls.target.z));
+      }
+      frameId = requestAnimationFrame(update);
+    };
+    frameId = requestAnimationFrame(update);
+    return () => cancelAnimationFrame(frameId);
+  }, [sceneRef, toScreen]);
   return (
     <div className="absolute bottom-4 right-4 z-20 w-40 h-40 rounded-2xl bg-zinc-900/80 backdrop-blur-xl border border-white/10 overflow-hidden shadow-2xl">
       <div className="relative w-full h-full p-2">
@@ -504,14 +515,14 @@ export function CampusViewer({ buildings }: { buildings: BuildingData[] }) {
   } | null>(null);
   const [filtered, setFiltered] = useState<BuildingData[]>(buildings);
 
-  useEffect(() => { const q = search.toLowerCase(); setFiltered(q ? buildings.filter((b) => b.name.toLowerCase().includes(q) || (b.department && b.department.toLowerCase().includes(q)) || (b.abbreviation && b.abbreviation.toLowerCase().includes(q))) : buildings); }, [search, buildings]);
+  useEffect(() => { const q = search.toLowerCase(); setTimeout(() => setFiltered(q ? buildings.filter((b) => b.name.toLowerCase().includes(q) || (b.department && b.department.toLowerCase().includes(q)) || (b.abbreviation && b.abbreviation.toLowerCase().includes(q))) : buildings), 0); }, [search, buildings]);
 
   const resetView = useCallback(() => { const ref = sceneRef.current; if (!ref) return; ref.controls.target.set(0, 1.5, 0); ref.camera.position.set(22, 18, 22); ref.controls.update(); setSelected(null); setRoute(null); }, []);
   const flyTo = useCallback((building: BuildingData) => { const ref = sceneRef.current; if (!ref) return; ref.controls.target.set(building.positionX, 1.5, building.positionZ); ref.camera.position.set(building.positionX + 8, 5, building.positionZ + 8); ref.controls.update(); setSelected(building); }, []);
   const navigateTo = useCallback((building: BuildingData) => {
     if (!selected) { setSelected(building); flyTo(building); return; }
     if (selected.id === building.id) return;
-    const waypoints = findPath(selected.positionX, selected.positionZ, building.positionX, building.positionZ, buildings);
+    const waypoints = findPath(selected.positionX, selected.positionZ, building.positionX, building.positionZ);
     const dx = building.positionX - selected.positionX, dz = building.positionZ - selected.positionZ, dist = Math.sqrt(dx * dx + dz * dz);
     setRoute({ from: { x: selected.positionX, z: selected.positionZ }, to: { x: building.positionX, z: building.positionZ }, waypoints, fromName: selected.name, toName: building.name, distance: dist });
     const ref = sceneRef.current;
@@ -524,7 +535,7 @@ export function CampusViewer({ buildings }: { buildings: BuildingData[] }) {
       dot.position.set(building.positionX, 0.3, building.positionZ); ref.scene.add(dot); ref.markerPulse = { mesh: dot, time: 0 };
     }
     setSelected(building); flyTo(building);
-  }, [selected, buildings, flyTo]);
+  }, [selected, flyTo]);
 
   useEffect(() => {
     if (!containerRef.current || buildings.length === 0) return;

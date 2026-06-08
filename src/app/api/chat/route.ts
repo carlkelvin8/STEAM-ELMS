@@ -92,40 +92,75 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const body = await request.json();
-  const { senderId, receiverId, courseId, message } = body;
+  try {
+    const body = await request.json();
+    const { senderId, receiverId, courseId, message: rawMessage } = body;
 
-  if (!senderId || !receiverId || !message?.trim()) {
-    return Response.json({ error: "senderId, receiverId, and message are required" }, { status: 400 });
+    if (typeof senderId !== "string" || !senderId.trim()) {
+      return Response.json({ error: "senderId is required" }, { status: 400 });
+    }
+    if (typeof receiverId !== "string" || !receiverId.trim()) {
+      return Response.json({ error: "receiverId is required" }, { status: 400 });
+    }
+    if (typeof rawMessage !== "string" || !rawMessage.trim()) {
+      return Response.json({ error: "message is required" }, { status: 400 });
+    }
+
+    const message = rawMessage.trim().slice(0, 5000);
+
+    if (courseId !== undefined && courseId !== null && courseId !== "") {
+      if (typeof courseId !== "string") {
+        return Response.json({ error: "Invalid courseId" }, { status: 400 });
+      }
+    }
+
+    const msg = await prisma.message.create({
+      data: {
+        senderId,
+        receiverId,
+        courseId: courseId || null,
+        message,
+      },
+      include: {
+        sender: { select: { id: true, name: true, role: true, avatarUrl: true } },
+      },
+    });
+
+    return Response.json(msg, { status: 201 });
+  } catch (err) {
+    console.error("Chat error:", err);
+    if (err instanceof SyntaxError) {
+      return Response.json({ error: "Invalid request body" }, { status: 400 });
+    }
+    return Response.json({ error: "Internal server error" }, { status: 500 });
   }
-
-  const msg = await prisma.message.create({
-    data: {
-      senderId,
-      receiverId,
-      courseId: courseId || null,
-      message: message.trim(),
-    },
-    include: {
-      sender: { select: { id: true, name: true, role: true, avatarUrl: true } },
-    },
-  });
-
-  return Response.json(msg, { status: 201 });
 }
 
 export async function PUT(request: NextRequest) {
-  const body = await request.json();
-  const { userId, otherUserId } = body;
+  try {
+    const body = await request.json();
+    const { userId, otherUserId } = body;
 
-  if (!userId || !otherUserId) {
-    return Response.json({ error: "userId and otherUserId are required" }, { status: 400 });
+    if (typeof userId !== "string" || !userId.trim()) {
+      return Response.json({ error: "userId is required" }, { status: 400 });
+    }
+    if (typeof otherUserId !== "string" || !otherUserId.trim()) {
+      return Response.json({ error: "otherUserId is required" }, { status: 400 });
+    }
+
+    await prisma.message.updateMany({
+      where: { senderId: otherUserId, receiverId: userId, read: false },
+      data: { read: true },
+    });
+
+    return Response.json({ success: true });
+  } catch (err) {
+    console.error("Chat mark read error:", err);
+    if (err instanceof SyntaxError) {
+      return Response.json({ error: "Invalid request body" }, { status: 400 });
+    }
+    return Response.json({ error: "Internal server error" }, { status: 500 });
   }
-
-  await prisma.message.updateMany({
-    where: { senderId: otherUserId, receiverId: userId, read: false },
-    data: { read: true },
-  });
-
-  return Response.json({ success: true });
 }
+
+

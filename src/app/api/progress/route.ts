@@ -52,37 +52,63 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const body = await request.json();
+  try {
+    const body = await request.json();
+    const { userId, lessonId, status, score } = body;
 
-  const progress = await prisma.progress.upsert({
-    where: {
-      userId_lessonId: {
-        userId: body.userId,
-        lessonId: body.lessonId,
+    if (typeof userId !== "string" || !userId.trim()) {
+      return Response.json({ error: "userId is required" }, { status: 400 });
+    }
+    if (typeof lessonId !== "string" || !lessonId.trim()) {
+      return Response.json({ error: "lessonId is required" }, { status: 400 });
+    }
+
+    const VALID_STATUSES = ["NOT_STARTED", "IN_PROGRESS", "COMPLETED"] as const;
+    if (typeof status !== "string" || !VALID_STATUSES.includes(status as typeof VALID_STATUSES[number])) {
+      return Response.json({ error: "Invalid status" }, { status: 400 });
+    }
+
+    if (score !== undefined && score !== null) {
+      if (typeof score !== "number" || isNaN(score) || score < 0 || score > 100) {
+        return Response.json({ error: "Score must be a number between 0 and 100" }, { status: 400 });
+      }
+    }
+
+    const progress = await prisma.progress.upsert({
+      where: {
+        userId_lessonId: {
+          userId,
+          lessonId,
+        },
       },
-    },
-    update: {
-      status: body.status,
-      score: body.score,
-      completedAt: body.status === "COMPLETED" ? new Date() : null,
-    },
-    create: {
-      userId: body.userId,
-      lessonId: body.lessonId,
-      status: body.status,
-      score: body.score,
-      completedAt: body.status === "COMPLETED" ? new Date() : null,
-    },
-  });
+      update: {
+        status,
+        score: score ?? undefined,
+        completedAt: status === "COMPLETED" ? new Date() : null,
+      },
+      create: {
+        userId,
+        lessonId,
+        status,
+        score: score ?? undefined,
+        completedAt: status === "COMPLETED" ? new Date() : null,
+      },
+    });
 
-  if (body.status === "COMPLETED") {
-    await updateEnrollmentProgress(body.userId, body.lessonId);
-    // Fire-and-forget achievement checks
-    checkAchievementMetric(body.userId, "lessons_completed");
-    checkAchievementMetric(body.userId, "courses_completed");
+    if (status === "COMPLETED") {
+      await updateEnrollmentProgress(userId, lessonId);
+      checkAchievementMetric(userId, "lessons_completed");
+      checkAchievementMetric(userId, "courses_completed");
+    }
+
+    return Response.json(progress, { status: 201 });
+  } catch (err) {
+    console.error("Progress error:", err);
+    if (err instanceof SyntaxError) {
+      return Response.json({ error: "Invalid request body" }, { status: 400 });
+    }
+    return Response.json({ error: "Internal server error" }, { status: 500 });
   }
-
-  return Response.json(progress, { status: 201 });
 }
 
 async function updateEnrollmentProgress(userId: string, lessonId: string) {

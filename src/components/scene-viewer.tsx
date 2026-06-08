@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
@@ -57,8 +57,11 @@ export function SceneViewer({ config, className }: SceneViewerProps) {
     frameId: number;
   } | null>(null);
 
-  const merged = { ...defaultConfig, ...config };
-  merged.objects = config.objects ?? defaultConfig.objects;
+  const merged = useMemo(() => {
+    const m = { ...defaultConfig, ...config };
+    m.objects = config.objects ?? defaultConfig.objects;
+    return m;
+  }, [config]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -176,7 +179,7 @@ export function SceneViewer({ config, className }: SceneViewerProps) {
       }
       sceneRef.current = null;
     };
-  }, []);
+  }, [merged]);
 
   return (
     <div

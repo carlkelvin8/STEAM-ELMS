@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Logo } from "@/components/logo";
+
 
 interface DashboardData {
   user: { name: string; email: string; role: string; memberSince: string };
@@ -32,14 +32,8 @@ export default function DashboardPage() {
   const router = useRouter();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [greeting, setGreeting] = useState("Welcome");
-
-  useEffect(() => {
-    const h = new Date().getHours();
-    if (h < 12) setGreeting("Good morning");
-    else if (h < 18) setGreeting("Good afternoon");
-    else setGreeting("Good evening");
-  }, []);
+  const hh = new Date().getHours();
+  const greeting = hh < 12 ? "Good morning" : hh < 18 ? "Good afternoon" : "Good evening";
 
   useEffect(() => {
     const raw = localStorage.getItem("user");

@@ -53,7 +53,15 @@ interface ProgressRecord {
 
 export default function ProgressPage() {
   const router = useRouter();
-  const [user, setUser] = useState<{ id: string } | null>(null);
+  const [user] = useState<{ id: string } | null>(() => {
+    if (typeof window !== "undefined") {
+      const raw = localStorage.getItem("user");
+      if (raw) {
+        try { return JSON.parse(raw); } catch {}
+      }
+    }
+    return null;
+  });
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [progressMap, setProgressMap] = useState<Map<string, ProgressRecord>>(
     new Map(),
@@ -63,18 +71,15 @@ export default function ProgressPage() {
   const [streak, setStreak] = useState<StreakData | null>(null);
 
   useEffect(() => {
-    const raw = localStorage.getItem("user");
-    if (!raw) {
+    if (!user) {
       router.push("/login");
       return;
     }
-    const parsed = JSON.parse(raw);
-    setUser(parsed);
 
     Promise.all([
-      fetch(`/api/enrollments?userId=${parsed.id}`).then((r) => r.json()),
-      fetch(`/api/progress?userId=${parsed.id}`).then((r) => r.json()),
-      fetch(`/api/streaks?userId=${parsed.id}`).then((r) => r.json()),
+      fetch(`/api/enrollments?userId=${user.id}`).then((r) => r.json()),
+      fetch(`/api/progress?userId=${user.id}`).then((r) => r.json()),
+      fetch(`/api/streaks?userId=${user.id}`).then((r) => r.json()),
     ])
       .then(([enrollmentsData, progressData, streakData]) => {
         setEnrollments(enrollmentsData);
@@ -86,7 +91,7 @@ export default function ProgressPage() {
         setProgressMap(map);
       })
       .finally(() => setLoading(false));
-  }, [router]);
+  }, [router, user]);
 
   const markComplete = useCallback(
     async (lessonId: string) => {

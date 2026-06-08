@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 interface UserData {
   id: string;
@@ -19,6 +20,9 @@ export default function IDPage() {
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
+  const [bars] = useState(() =>
+    Array.from({ length: 48 }, () => ({ height: 50 + Math.random() * 60, opacity: 0.3 + Math.random() * 0.7 }))
+  );
 
   useEffect(() => {
     const raw = localStorage.getItem("user");
@@ -133,7 +137,7 @@ export default function IDPage() {
               <div className="shrink-0">
                 <div className="size-28 rounded-xl border-[3px] border-white/60 shadow-lg shadow-black/10 overflow-hidden bg-white/20 flex items-center justify-center">
                   {user.avatarUrl ? (
-                    <img src={user.avatarUrl} alt="" className="size-full object-cover" />
+                    <Image src={user.avatarUrl} alt="" fill className="size-full object-cover" unoptimized />
                   ) : (
                     <span className="text-white font-bold text-4xl">{initial}</span>
                   )}
@@ -201,17 +205,17 @@ export default function IDPage() {
               <div className="flex items-center gap-4">
                 {/* Barcode simulation */}
                 <div className="flex-1 flex items-end gap-[2px] h-10">
-                  {Array.from({ length: 48 }, (_, i) => (
+                  {bars.map((bar, i) => (
                     <div
                       key={i}
                       className="flex-1 bg-white/70 rounded-[1px]"
-                      style={{ height: `${50 + Math.random() * 60}%`, opacity: 0.3 + Math.random() * 0.7 }}
+                      style={{ height: `${bar.height}%`, opacity: bar.opacity }}
                     />
                   ))}
                 </div>
                 {/* QR */}
                 <div className="shrink-0 bg-white rounded-lg p-1.5 shadow-md">
-                  <img src={qrApi} alt="QR" className="size-14" />
+                  <Image src={qrApi} alt="QR" width={56} height={56} className="size-14" unoptimized />
                 </div>
               </div>
               <p className="text-[7px] text-white/30 font-medium tracking-[0.3em] uppercase text-center mt-2">

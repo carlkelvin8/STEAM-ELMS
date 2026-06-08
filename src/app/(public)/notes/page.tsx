@@ -190,6 +190,7 @@ export default function NotesPage() {
             onChange={(e) => setNewNoteContent(e.target.value)}
             placeholder="Write your note..."
             rows={4}
+            maxLength={10000}
             className="w-full resize-none rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 placeholder:text-zinc-400"
           />
           <div className="flex gap-2">
@@ -274,6 +275,7 @@ export default function NotesPage() {
                     value={editContent}
                     onChange={(e) => setEditContent(e.target.value)}
                     rows={4}
+                    maxLength={10000}
                     className="w-full resize-none rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
                   />
                   <div className="flex gap-2">

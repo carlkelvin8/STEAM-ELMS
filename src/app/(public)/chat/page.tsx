@@ -1,7 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import Image from "next/image";
 
 interface UserInfo {
   id: string;
@@ -37,7 +38,12 @@ interface EnrolledCourse {
 
 export default function ChatPage() {
   const router = useRouter();
-  const [user, setUser] = useState<UserInfo | null>(null);
+  const [user] = useState<UserInfo | null>(() => {
+    if (typeof window === "undefined") return null;
+    const raw = localStorage.getItem("user");
+    if (!raw) return null;
+    try { return JSON.parse(raw); } catch { return null; }
+  });
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [messages, setMessages] = useState<MessageData[]>([]);
   const [selectedConv, setSelectedConv] = useState<Conversation | null>(null);
@@ -48,37 +54,41 @@ export default function ChatPage() {
   const [showNewChat, setShowNewChat] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const pollRef = useRef<ReturnType<typeof setInterval>>(undefined);
+  const initRef = useRef(false);
 
   useEffect(() => {
-    const raw = localStorage.getItem("user");
-    if (!raw) { router.push("/login"); return; }
-    const parsed = JSON.parse(raw);
-    setUser(parsed);
-    fetchConversations(parsed.id);
-    if (parsed.role === "STUDENT") {
-      fetch(`/api/enrollments?userId=${parsed.id}`)
-        .then(r => r.json())
-        .then(data => {
+    if (!user) {
+      router.push("/login");
+      return;
+    }
+    if (initRef.current) return;
+    initRef.current = true;
+
+    const loadData = async () => {
+      try {
+        const [chatRes, enrollRes] = await Promise.all([
+          fetch(`/api/chat?userId=${user.id}`),
+          user.role === "STUDENT" ? fetch(`/api/enrollments?userId=${user.id}`) : null,
+        ]);
+
+        if (chatRes.ok) {
+          setConversations(await chatRes.json());
+        }
+
+        if (enrollRes && enrollRes.ok) {
+          const data = await enrollRes.json();
           if (Array.isArray(data)) {
             setEnrolledCourses(data.map((e: { course: EnrolledCourse }) => e.course));
           }
-        })
-        .catch(() => {});
-    }
-  }, [router]);
+        }
+      } catch {}
+      setLoading(false);
+    };
 
-  const fetchConversations = async (userId: string) => {
-    try {
-      const res = await fetch(`/api/chat?userId=${userId}`);
-      if (res.ok) {
-        const data = await res.json();
-        setConversations(data);
-      }
-    } catch {}
-    setLoading(false);
-  };
+    loadData();
+  }, [user, router]);
 
-  const fetchMessages = async (otherUserId: string, courseId?: string) => {
+  const fetchMessages = useCallback(async (otherUserId: string, courseId?: string) => {
     if (!user) return;
     let url = `/api/chat?userId=${user.id}&otherUserId=${otherUserId}`;
     if (courseId) url += `&courseId=${courseId}`;
@@ -97,7 +107,7 @@ export default function ChatPage() {
     setConversations(prev => prev.map(c =>
       c.user.id === otherUserId ? { ...c, unreadCount: 0 } : c
     ));
-  };
+  }, [user]);
 
   const selectConversation = (conv: Conversation) => {
     setSelectedConv(conv);
@@ -155,7 +165,7 @@ export default function ChatPage() {
       fetchMessages(selectedConv.user.id);
     }, 5000);
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
-  }, [user, selectedConv?.user.id]);
+  }, [user, selectedConv, fetchMessages]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -258,7 +268,7 @@ export default function ChatPage() {
                 }`}
               >
                 <div className="size-10 rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center text-white font-bold text-sm shrink-0 ring-2 ring-white/50 dark:ring-zinc-800/50">
-                  {conv.user.avatarUrl ? <img src={conv.user.avatarUrl} alt="" className="size-full object-cover rounded-full" /> : conv.user.name.charAt(0)}
+                  {conv.user.avatarUrl ? <Image src={conv.user.avatarUrl} alt="" width={40} height={40} className="size-full object-cover rounded-full" unoptimized /> : conv.user.name.charAt(0)}
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2">
@@ -305,7 +315,7 @@ export default function ChatPage() {
                 </svg>
               </button>
               <div className="size-9 rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center text-white font-bold text-sm shrink-0">
-                {selectedConv.user.avatarUrl ? <img src={selectedConv.user.avatarUrl} alt="" className="size-full object-cover rounded-full" /> : selectedConv.user.name.charAt(0)}
+                {selectedConv.user.avatarUrl ? <Image src={selectedConv.user.avatarUrl} alt="" width={36} height={36} className="size-full object-cover rounded-full" unoptimized /> : selectedConv.user.name.charAt(0)}
               </div>
               <div>
                 <p className="text-sm font-semibold">{selectedConv.user.name}</p>
@@ -361,6 +371,7 @@ export default function ChatPage() {
                     onKeyDown={handleKeyDown}
                     placeholder="Type a message..."
                     rows={1}
+                    maxLength={5000}
                     className="w-full rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none placeholder:text-zinc-400 max-h-32"
                     style={{ minHeight: "42px" }}
                   />

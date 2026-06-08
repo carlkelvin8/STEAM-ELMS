@@ -75,9 +75,6 @@ export async function GET(request: NextRequest) {
     .filter((p) => p.status === "COMPLETED" && p.completedAt)
     .slice(0, 10)
     .map((p) => {
-      const lesson = allLessonIds.includes(p.lessonId)
-        ? progressRecords.find((pr) => pr.lessonId === p.lessonId)
-        : null;
       const enrollment = enrollments.find((e) =>
         e.course.modules.some((m) => m.lessons.some((l) => l.id === p.lessonId))
       );

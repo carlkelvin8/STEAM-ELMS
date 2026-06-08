@@ -18,31 +18,55 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const body = await request.json();
-  const { moduleId, title, type, url, content } = body;
+  try {
+    const body = await request.json();
+    const { moduleId, title: rawTitle, type, url, content } = body;
 
-  if (!moduleId || !title) {
-    return Response.json({ error: "moduleId and title are required" }, { status: 400 });
+    if (typeof moduleId !== "string" || !moduleId.trim()) {
+      return Response.json({ error: "moduleId is required" }, { status: 400 });
+    }
+    if (typeof rawTitle !== "string" || !rawTitle.trim()) {
+      return Response.json({ error: "title is required" }, { status: 400 });
+    }
+
+    const title = rawTitle.trim().slice(0, 200);
+
+    const VALID_TYPES = ["PDF", "VIDEO", "LINK", "ARTICLE", "FILE"];
+    const resourceType = type && VALID_TYPES.includes(type) ? type : "PDF";
+
+    if (url !== undefined && url !== null && typeof url !== "string") {
+      return Response.json({ error: "URL must be a string" }, { status: 400 });
+    }
+
+    if (content !== undefined && content !== null && typeof content !== "string") {
+      return Response.json({ error: "Content must be a string" }, { status: 400 });
+    }
+
+    const last = await prisma.moduleResource.findFirst({
+      where: { moduleId },
+      orderBy: { order: "desc" },
+      select: { order: true },
+    });
+
+    const resource = await prisma.moduleResource.create({
+      data: {
+        moduleId,
+        title,
+        type: resourceType,
+        url: url ?? null,
+        content: content ?? null,
+        order: (last?.order ?? -1) + 1,
+      },
+    });
+
+    return Response.json(resource, { status: 201 });
+  } catch (err) {
+    console.error("Resource create error:", err);
+    if (err instanceof SyntaxError) {
+      return Response.json({ error: "Invalid request body" }, { status: 400 });
+    }
+    return Response.json({ error: "Internal server error" }, { status: 500 });
   }
-
-  const last = await prisma.moduleResource.findFirst({
-    where: { moduleId },
-    orderBy: { order: "desc" },
-    select: { order: true },
-  });
-
-  const resource = await prisma.moduleResource.create({
-    data: {
-      moduleId,
-      title,
-      type: type ?? "PDF",
-      url: url ?? null,
-      content: content ?? null,
-      order: (last?.order ?? -1) + 1,
-    },
-  });
-
-  return Response.json(resource, { status: 201 });
 }
 
 export async function DELETE(request: NextRequest) {

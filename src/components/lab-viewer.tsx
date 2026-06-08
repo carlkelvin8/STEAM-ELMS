@@ -113,7 +113,6 @@ function createBeaker(wallColor: string, radius = 0.2, height = 0.4, thickness =
 function createFlask(wallColor: string): THREE.Group {
   const g = new THREE.Group();
   const pts: THREE.Vector2[] = [];
-  const t = 0.015;
   // Bottom
   pts.push(new THREE.Vector2(0, 0));
   pts.push(new THREE.Vector2(0.22, 0));
@@ -351,7 +350,6 @@ function createLiquidBody(
       pts.push(new THREE.Vector2(0, 0));
       pts.push(new THREE.Vector2(0.205, 0));
       pts.push(new THREE.Vector2(0.205, Math.min(ih, 0.15)));
-      const neckStart = Math.max(ih, 0.30);
       if (ih > 0.30) {
         pts.push(new THREE.Vector2(0.085, 0.30));
         pts.push(new THREE.Vector2(0.085, ih));
@@ -436,9 +434,10 @@ export function LabViewer({
   const [step, setStep] = useState(0);
 
   useEffect(() => {
-    if (!experiment.config) return;
+    const cfg = experiment.config;
+    if (!cfg) return;
     try {
-      setConfig(JSON.parse(experiment.config));
+      setTimeout(() => setConfig(JSON.parse(cfg)), 0);
     } catch {
       // ignore
     }
@@ -883,8 +882,6 @@ export function LabViewer({
       renderer.setSize(w, h);
     });
     resizeObserver.observe(container);
-
-    const originalColors = liquidMeshes.map((m) => (m.material as THREE.MeshPhysicalMaterial).color.getHex());
 
     (window as unknown as Record<string, unknown>).__triggerReaction = () => {
       if (isReacted) return;

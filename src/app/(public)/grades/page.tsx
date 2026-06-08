@@ -73,17 +73,16 @@ export default function GradesPage() {
   const [grades, setGrades] = useState<GradeCourse[]>([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<string | null>(null);
-  const [userId, setUserId] = useState<string | null>(null);
-  const [view, setView] = useState<"cards" | "table">("cards");
-
-  useEffect(() => {
-    const raw = localStorage.getItem("user");
-    if (raw) {
-      try {
-        setUserId(JSON.parse(raw).id);
-      } catch {}
+  const [userId] = useState<string | null>(() => {
+    if (typeof window !== "undefined") {
+      const raw = localStorage.getItem("user");
+      if (raw) {
+        try { return JSON.parse(raw).id; } catch {}
+      }
     }
-  }, []);
+    return null;
+  });
+  const [view, setView] = useState<"cards" | "table">("cards");
 
   useEffect(() => {
     if (!userId) return;
