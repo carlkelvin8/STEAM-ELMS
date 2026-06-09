@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { authenticateRequest } from "@/lib/auth";
 
 export async function GET(
   _request: NextRequest,
@@ -37,9 +38,22 @@ export async function PATCH(
   ctx: RouteContext<"/api/courses/[id]">
 ) {
   try {
+    const user = await authenticateRequest(request);
+    if (!user) {
+      return Response.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { id } = await ctx.params;
     if (typeof id !== "string" || !id.trim()) {
       return Response.json({ error: "Course ID is required" }, { status: 400 });
+    }
+
+    const existing = await prisma.course.findUnique({ where: { id }, select: { instructorId: true } });
+    if (!existing) {
+      return Response.json({ error: "Course not found" }, { status: 404 });
+    }
+    if (user.role !== "INSTRUCTOR" && user.sub !== existing.instructorId) {
+      return Response.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const body = await request.json();
@@ -106,12 +120,25 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   ctx: RouteContext<"/api/courses/[id]">
 ) {
+  const user = await authenticateRequest(request);
+  if (!user) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const { id } = await ctx.params;
   if (typeof id !== "string" || !id.trim()) {
     return Response.json({ error: "Course ID is required" }, { status: 400 });
+  }
+
+  const existing = await prisma.course.findUnique({ where: { id }, select: { instructorId: true } });
+  if (!existing) {
+    return Response.json({ error: "Course not found" }, { status: 404 });
+  }
+  if (user.role !== "INSTRUCTOR" && user.sub !== existing.instructorId) {
+    return Response.json({ error: "Forbidden" }, { status: 403 });
   }
 
   await prisma.course.delete({ where: { id } });

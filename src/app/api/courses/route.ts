@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { authenticateRequest } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -27,6 +28,11 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const user = await authenticateRequest(request);
+    if (!user || user.role !== "INSTRUCTOR") {
+      return Response.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     const body = await request.json();
 
     if (typeof body.title !== "string" || !body.title.trim()) {
@@ -34,9 +40,6 @@ export async function POST(request: NextRequest) {
     }
     if (typeof body.description !== "string" || !body.description.trim()) {
       return Response.json({ error: "Description is required" }, { status: 400 });
-    }
-    if (typeof body.instructorId !== "string" || !body.instructorId.trim()) {
-      return Response.json({ error: "Instructor ID is required" }, { status: 400 });
     }
 
     const title = body.title.trim().slice(0, 200);
@@ -50,7 +53,7 @@ export async function POST(request: NextRequest) {
     const published = typeof body.published === "boolean" ? body.published : false;
 
     const course = await prisma.course.create({
-      data: { title, description, instructorId: body.instructorId, category: body.category || null, difficulty: difficulty ?? null, estimatedHours, published },
+      data: { title, description, instructorId: user.sub, category: body.category || null, difficulty: difficulty ?? null, estimatedHours, published },
     });
 
     return Response.json(course, { status: 201 });

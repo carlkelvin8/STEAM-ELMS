@@ -88,12 +88,11 @@ export function Sidebar() {
     }
     return null;
   });
-  const [initialized, setInitialized] = useState(false);
   const [open, setOpen] = useState(false);
   const [achievementCount, setAchievementCount] = useState(0);
 
   useEffect(() => {
-    if (!user) { setTimeout(() => setInitialized(true), 0); return; }
+    if (!user) return;
     fetch(`/api/auth/profile?id=${user.id}`)
       .then((r) => r.json())
       .then((data) => {
@@ -106,10 +105,9 @@ export function Sidebar() {
         if (Array.isArray(data)) setAchievementCount(data.filter((a: { unlocked: boolean }) => a.unlocked).length);
       })
       .catch(() => {});
-    setTimeout(() => setInitialized(true), 0);
   }, [user]);
 
-  useEffect(() => { setTimeout(() => setOpen(false), 0); }, [pathname]);
+  useEffect(() => { setOpen(false); }, [pathname]);
 
   const isActive = (href: string) => {
     if (href === "/dashboard") return pathname === "/dashboard";
@@ -147,8 +145,6 @@ export function Sidebar() {
         buttonShadow: "shadow-violet-500/25 hover:shadow-violet-500/35",
         badge: "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300",
       };
-
-  if (!initialized || !user) return null;
 
   return (
     <>
@@ -216,7 +212,7 @@ export function Sidebar() {
 
         {/* Profile */}
         <div className="p-4 border-t border-zinc-200/60 dark:border-zinc-800/60 bg-gradient-to-t from-zinc-50/50 to-transparent dark:from-zinc-900/50">
-          {user && (
+          {user ? (
             <div className="space-y-2">
               <div className="flex items-center gap-3">
                 <div className={`size-10 rounded-xl bg-gradient-to-br ${theme.avatarBg} flex items-center justify-center text-white font-bold text-sm shadow-lg shrink-0 overflow-hidden ring-2 ring-white/50 dark:ring-zinc-800/50`}>
@@ -239,6 +235,11 @@ export function Sidebar() {
                   Sign out
                 </button>
               </div>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <Link href="/login" className="block text-sm font-medium text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200 transition-colors px-3 py-2 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800">Sign in</Link>
+              <Link href="/register" className={`block text-sm font-medium bg-gradient-to-r ${theme.buttonGradient} text-white px-5 py-2.5 rounded-xl ${theme.buttonHover} shadow-lg ${theme.buttonShadow} transition-all text-center`}>Get started</Link>
             </div>
           )}
         </div>
